@@ -8,6 +8,17 @@ with a local model through Ollama.
 
 ![How it fits together](docs/images/architecture.png)
 
+## Two flows
+
+- **`n8n/full/`: the full flow I use every day.** 225 nodes: rules and a local router model, then music,
+  timers, reminders, weather, Claude Code on the laptop, homelab checks, mail, calendar, routines and more.
+  Some branches need a small helper service of your own; see [n8n/full/README.md](n8n/full/README.md).
+
+  ![The full flow](docs/images/full-flow.png)
+
+- **`n8n/stella-voice.json`: the small one, works out of the box.** 17 nodes: time, weather, open, close and lock,
+  and chat with a local model. Start here.
+
 ## What it does
 
 - **Tap** the Copilot key (or click the mark in the top bar): a card opens under the bar, type and press Enter.
@@ -29,7 +40,8 @@ with a local model through Ollama.
 |---|---|
 | `extension/` | GNOME Shell extension: the top-bar mark, the card, the Copilot key binding, desktop actions |
 | `helper/` | `stella_helper.py`, a small HTTP service on 127.0.0.1:8098: mic recording, Whisper, Kokoro |
-| `n8n/` | `stella-voice.json`, the workflow to import, and `build_flow.py`, which generates it |
+| `n8n/` | `stella-voice.json` (small, works as is) and `build_flow.py`, which generates it |
+| `n8n/full/` | `stella-voice-full.json`, the full 225-node flow, and what it needs |
 | `tests/` | checks that the workflow is wired, the wake-word clean-up, and that no personal details are in the tree |
 
 ## Install
