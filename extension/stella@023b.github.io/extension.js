@@ -82,6 +82,7 @@ class Stella {
             global.display.ungrab_accelerator(a);
             Main.wm.allowKeybinding(Meta.external_binding_name_for_action(a), Shell.ActionMode.NONE);
         }
+        this._theme.disconnect(this._scaleId);
         this._menu.destroy();
         Main.layoutManager.removeChrome(this._card);
         this._card.destroy();
@@ -179,8 +180,13 @@ class Stella {
 
     _buildCard() {
         this._card = new St.Bin({style_class: 'st-card', reactive: true, visible: false});
-        this._content = new St.BoxLayout({style_class: 'st-content', orientation: Clutter.Orientation.VERTICAL, width: W});
+        this._content = new St.BoxLayout({style_class: 'st-content', orientation: Clutter.Orientation.VERTICAL});
         this._card.set_child(this._content);
+        // W is in logical pixels: follow the display scale so the card is not cramped on HiDPI screens
+        this._theme = St.ThemeContext.get_for_stage(global.stage);
+        const fit = () => (this._content.width = W * this._theme.scale_factor);
+        fit();
+        this._scaleId = this._theme.connect('notify::scale-factor', fit);
 
         const head = new St.BoxLayout({style_class: 'st-head'});
         this._state = new St.Label({style_class: 'st-state', x_expand: true, y_align: Clutter.ActorAlign.CENTER});
@@ -243,7 +249,7 @@ class Stella {
         const [iw] = this._ind.get_transformed_size();
         const mon = Main.layoutManager.findMonitorForActor(this._ind) ?? Main.layoutManager.primaryMonitor;
         const panel = Main.panel.get_transformed_extents();
-        const w = W + 2;
+        const w = this._content.width + 2;
         let x = Math.round(ix + iw / 2 - w / 2);
         x = Math.max(mon.x + 8, Math.min(x, mon.x + mon.width - w - 8));
         this._card.set_position(x, Math.round(panel.origin.y + panel.size.height + GAP));

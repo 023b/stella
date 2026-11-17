@@ -19,6 +19,8 @@ with a local model through Ollama.
 - **`n8n/stella-voice.json`: the small one, works out of the box.** 17 nodes: time, weather, open, close and lock,
   and chat with a local model. Start here.
 
+  ![The small flow](docs/images/small-flow.png)
+
 ## What it does
 
 - **Tap** the Copilot key (or click the mark in the top bar): a card opens under the bar, type and press Enter.
@@ -30,9 +32,9 @@ with a local model through Ollama.
 - Replies can be spoken with Kokoro. Right-click the mark to turn speech or hold-to-talk off.
 - If Stella asks something back ("Close what?"), the next answer is taken as the reply.
 
-| Listening | Typing | Menu |
+| Holding the key | "open the files app" | Menu |
 |---|---|---|
-| ![](docs/images/card-listening.png) | ![](docs/images/card-typing.png) | ![](docs/images/menu.png) |
+| ![](docs/images/card-listening.png) | ![](docs/images/open-files.png) | ![](docs/images/menu.png) |
 
 ## Parts
 
