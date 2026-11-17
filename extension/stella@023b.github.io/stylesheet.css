@@ -1,0 +1,47 @@
+/* Stella. One accent (crimson), only while listening and for the speak toggle when on. */
+.st-ind {
+  margin: 4px 1px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  transition-duration: 160ms;
+}
+.st-ind:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
+.st-ind:active { background-color: rgba(255, 255, 255, 0.16); }
+.st-ind.listening { color: #ff8095; background-color: rgba(200, 16, 46, 0.32); }
+.st-ind.thinking { color: rgba(255, 255, 255, 0.7); background-color: rgba(255, 255, 255, 0.08); }
+.st-ind.answer { color: #fff; background-color: rgba(255, 255, 255, 0.12); }
+.st-mark { icon-size: 16px; }
+
+.st-card {
+  border-radius: 22px;
+  background-color: rgba(16, 13, 15, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.st-content { padding: 10px 12px 12px 14px; spacing: 7px; }
+.st-head { spacing: 2px; }
+.st-state { font-size: 11.5px; font-weight: 500; color: rgba(255, 255, 255, 0.55); }
+.st-btn {
+  padding: 4px 6px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.6);
+  transition-duration: 120ms;
+}
+.st-btn:hover { color: #fff; background-color: rgba(255, 255, 255, 0.12); }
+.st-btn:checked { color: #e82c4e; }
+.st-btn StIcon { icon-size: 14px; }
+.st-entry {
+  padding: 7px 10px;
+  border-radius: 11px;
+  background-color: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 14px;
+  caret-color: #fff;
+  selection-background-color: rgba(200, 16, 46, 0.7);
+  selected-color: #fff;
+}
+.st-entry:focus { border-color: rgba(255, 255, 255, 0.24); }
+.st-entry StLabel.hint-text { color: rgba(255, 255, 255, 0.35); }
+.st-heard { font-size: 12.5px; color: rgba(255, 255, 255, 0.55); }
+.st-say { font-size: 14px; color: #fff; }

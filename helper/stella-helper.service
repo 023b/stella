@@ -1,0 +1,11 @@
+[Unit]
+Description=Stella helper (mic and voice for the Copilot key)
+After=pipewire.service
+
+[Service]
+ExecStart=%h/.local/share/stella/venv/bin/python %h/.local/share/stella/stella_helper.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

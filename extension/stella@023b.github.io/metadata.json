@@ -1,0 +1,8 @@
+{
+  "name": "Stella",
+  "description": "Turns the Copilot key into a local voice and text assistant. Tap to type, hold to talk. Answers come from your own n8n workflow.",
+  "uuid": "stella@023b.github.io",
+  "shell-version": ["46", "47", "48", "49", "50"],
+  "url": "https://github.com/023b/stella",
+  "version": 1
+}

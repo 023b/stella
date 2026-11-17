@@ -1,0 +1,672 @@
+{
+ "id": "stellaVoicePub",
+ "name": "Stella Voice",
+ "nodes": [
+  {
+   "parameters": {
+    "httpMethod": "POST",
+    "path": "stella/voice",
+    "responseMode": "responseNode",
+    "options": {}
+   },
+   "id": "81c912eb-41cb-a46b-184c-f0717c5ba98e",
+   "name": "Voice in",
+   "type": "n8n-nodes-base.webhook",
+   "typeVersion": 2,
+   "position": [
+    0,
+    300
+   ],
+   "webhookId": "dcb0fb25-f1bf-bc94-a240-57d5598d605e"
+  },
+  {
+   "parameters": {
+    "assignments": {
+     "assignments": [
+      {
+       "id": "9175a049-5a2c-b99d-07c4-d27041d1a3bb",
+       "name": "ollama",
+       "value": "http://host.docker.internal:11434",
+       "type": "string"
+      },
+      {
+       "id": "2778b6bb-69ee-57cf-12cd-60ae8b602198",
+       "name": "model",
+       "value": "qwen3:8b",
+       "type": "string"
+      },
+      {
+       "id": "dabb0783-787c-b56e-0af8-aa9f4ae35925",
+       "name": "place",
+       "value": "London",
+       "type": "string"
+      },
+      {
+       "id": "58329fef-64a5-e9e8-74f4-986ceb18ecad",
+       "name": "lat",
+       "value": "51.5072",
+       "type": "string"
+      },
+      {
+       "id": "28a61515-041a-1b04-22f7-58049e55ca03",
+       "name": "lon",
+       "value": "-0.1276",
+       "type": "string"
+      },
+      {
+       "id": "506cf727-d5e3-1838-ea79-f8a3c4374a1a",
+       "name": "timezone",
+       "value": "Europe/London",
+       "type": "string"
+      }
+     ]
+    },
+    "options": {}
+   },
+   "id": "25f27673-7626-6913-17c1-b2af8b333d95",
+   "name": "Settings",
+   "type": "n8n-nodes-base.set",
+   "typeVersion": 3.4,
+   "position": [
+    220,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// Clean the words, then try cheap rules first. Anything a rule can't place goes to the LLM.\nconst b = $('Voice in').first().json.body || {};\nconst raw = String(b.text || '').trim();\nconst prev = b.pending || null;          // what Stella asked last turn, if anything\nlet t = raw.toLowerCase().replace(/[\u2018\u2019]/g, \"'\").replace(/[^a-z0-9\\s'.:%/-]/g, ' ').replace(/\\s+/g, ' ').replace(/[.\\s]+$/, '').trim();\nt = t.replace(/^(hey |ok |okay |so |right |um |uh )+/, '').replace(/^stella[,]?\\s+/, '')\n     .replace(/^(please|can you|could you|would you)\\s+/, '').replace(/\\s+(please|thanks|thank you)$/, '').trim();\nconst out = (intent, slots = {}, rule = '') => [{ json: { raw, t, prev, intent, slots, rule } }];\nlet m;\nif (!t) return out('help', { empty: true }, 'empty');\nif (prev && prev.intent === 'desktop' && prev.ask === 'target') return out('desktop', { action: prev.action, target: t }, 'followup');\nif (/^(help|what can you do|what can i (say|ask))\\b/.test(t)) return out('help', {}, 'help');\nif (/^(never ?mind|cancel|forget it|nothing)$/.test(t)) return out('help', { cancel: true }, 'cancel');\nif (/^(what'?s the time|what time is it|time( now)?|tell me the time)$/.test(t)) return out('clock', { what: 'time' }, 'clock.time');\nif (/^(what'?s the date|what day is (it|today)|today'?s date|what date is it)$/.test(t)) return out('clock', { what: 'date' }, 'clock.date');\nif (/\\b(weather|forecast|raining|umbrella|temperature)\\b|\\bis it (going to be )?(cold|warm|hot|raining)\\b|\\bwill it rain\\b|\\bneed (a|my) (jacket|coat)\\b/.test(t) && !/\\bin (january|july|summer|winter)\\b/.test(t))\n  return out('weather', { when: /tomorrow/.test(t) ? 'tomorrow' : 'today' }, 'weather');\nif (/^(lock|lock (the |my )?(screen|laptop|computer))$/.test(t)) return out('desktop', { action: 'lock' }, 'desktop.lock');\nif ((m = t.match(/^(?:close|quit|exit)\\s*(?:the |my )?(.*?)(?: app| window)?$/))) return out('desktop', { action: 'close', target: m[1] }, 'desktop.close');\nif ((m = t.match(/^(?:open|launch|start|bring up|pull up)\\s*(?:the |my |up )?(.*?)(?: app)?$/))) return out('desktop', { action: 'open', target: m[1] }, 'desktop.open');\nreturn out('', {}, '');"
+   },
+   "id": "7a53555d-32a0-87e2-8972-ed2d8213daa8",
+   "name": "Understand",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    440,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "conditions": {
+     "options": {
+      "caseSensitive": true,
+      "leftValue": "",
+      "typeValidation": "loose",
+      "version": 2
+     },
+     "conditions": [
+      {
+       "id": "c03e2469-d29b-ca0e-6034-2fdda4de0201",
+       "leftValue": "={{ $json.intent }}",
+       "rightValue": "",
+       "operator": {
+        "type": "string",
+        "operation": "notEmpty",
+        "singleValue": true
+       }
+      }
+     ],
+     "combinator": "and"
+    },
+    "options": {}
+   },
+   "id": "da8bdd3b-c97c-2678-a7d2-b69b1a74ff49",
+   "name": "Matched by a rule?",
+   "type": "n8n-nodes-base.if",
+   "typeVersion": 2.2,
+   "position": [
+    660,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// One call does both jobs: pick the intent and, for chat, write the answer.\nconst j = $input.first().json, cfg = $('Settings').first().json;\nconst system = `You are Stella, a voice assistant on a Linux laptop. Reply ONLY with JSON:\n{\"intent\": one of ${JSON.stringify([\"weather\", \"clock\", \"desktop\", \"chat\", \"help\"])}, \"slots\": {...}}\nweather: {\"when\": \"today|tomorrow\"}\nclock: {\"what\": \"time|date\"}\ndesktop: {\"action\": \"open|close|lock\", \"target\": \"app or website\"}\nhelp: {}\nchat: {\"answer\": \"your spoken reply: calm, dry and quick, one short sentence, two at most, British English, no emojis, no lists\"}\nQuestions you can answer yourself are chat.`;\nconst shots = [\n  ['fire up firefox for me', { intent: 'desktop', slots: { action: 'open', target: 'firefox' } }],\n  ['is it going to be nippy later', { intent: 'weather', slots: { when: 'today' } }],\n  ['how many grams in a pound', { intent: 'chat', slots: { answer: 'About 454 grams.' } }],\n];\nconst messages = [{ role: 'system', content: system }];\nfor (const [u, a] of shots) messages.push({ role: 'user', content: u }, { role: 'assistant', content: JSON.stringify(a) });\nmessages.push({ role: 'user', content: j.raw });\nreturn [{ json: { ...j, llm_body: { model: cfg.model, stream: false, think: false, format: 'json', keep_alive: '30m',\n  options: { temperature: 0.1, num_predict: 200 }, messages } } }];"
+   },
+   "id": "2f46cdc9-34e9-4264-2779-ef1690ab2382",
+   "name": "Build router prompt",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    880,
+    460
+   ]
+  },
+  {
+   "parameters": {
+    "method": "POST",
+    "url": "={{ $('Settings').first().json.ollama }}/api/chat",
+    "options": {
+     "timeout": 150000
+    },
+    "sendBody": true,
+    "specifyBody": "json",
+    "jsonBody": "={{ JSON.stringify($json.llm_body) }}"
+   },
+   "id": "978d09d3-98f6-b9c8-5d2b-3d036c1fe2df",
+   "name": "LLM router (Ollama)",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1100,
+    460
+   ],
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "jsCode": "const INTENTS = [\"weather\", \"clock\", \"desktop\", \"chat\", \"help\"];\nconst j = $('Build router prompt').first().json, res = $input.first().json;\nlet r = {};\ntry { r = JSON.parse(String(res.message?.content || '{}').replace(/^[^{]*/, '').replace(/[^}]*$/, '')); } catch (e) {}\nif (!INTENTS.includes(r.intent))\n  r = res.error ? { intent: 'chat', slots: { answer: \"I can't reach the language model right now.\" } }\n                : { intent: 'chat', slots: { answer: \"Sorry, I didn't get that.\" } };\nconst { llm_body, ...rest } = j;\nreturn [{ json: { ...rest, intent: r.intent, slots: r.slots || {}, rule: 'llm' } }];"
+   },
+   "id": "08e8b00a-5cfa-f8a2-e29e-c5f3d4a83635",
+   "name": "Parse LLM reply",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1320,
+    460
+   ]
+  },
+  {
+   "parameters": {
+    "rules": {
+     "values": [
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "loose",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "3f8c4365-5a2b-157c-df83-291e3cce780d",
+          "leftValue": "={{ $json.intent }}",
+          "rightValue": "weather",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "weather"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "loose",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "3f69f1c1-b9e2-ea90-b0e4-10cc23574dd3",
+          "leftValue": "={{ $json.intent }}",
+          "rightValue": "clock",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "clock"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "loose",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "2abd8977-e437-c2be-8164-21bb320bedbd",
+          "leftValue": "={{ $json.intent }}",
+          "rightValue": "desktop",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "desktop"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "loose",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "b428c41c-f246-843f-a333-e3c5685091b8",
+          "leftValue": "={{ $json.intent }}",
+          "rightValue": "chat",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "chat"
+      },
+      {
+       "conditions": {
+        "options": {
+         "caseSensitive": true,
+         "leftValue": "",
+         "typeValidation": "loose",
+         "version": 2
+        },
+        "conditions": [
+         {
+          "id": "1c307fcf-106c-b53c-fb98-978210042c14",
+          "leftValue": "={{ $json.intent }}",
+          "rightValue": "help",
+          "operator": {
+           "type": "string",
+           "operation": "equals"
+          }
+         }
+        ],
+        "combinator": "and"
+       },
+       "renameOutput": true,
+       "outputKey": "help"
+      }
+     ]
+    },
+    "options": {
+     "fallbackOutput": "extra"
+    }
+   },
+   "id": "a92689b3-a7d3-ecb7-92da-bca8a6588e82",
+   "name": "Intent",
+   "type": "n8n-nodes-base.switch",
+   "typeVersion": 3.2,
+   "position": [
+    1540,
+    300
+   ]
+  },
+  {
+   "parameters": {
+    "method": "GET",
+    "url": "https://api.open-meteo.com/v1/forecast",
+    "options": {
+     "timeout": 15000
+    },
+    "sendQuery": true,
+    "specifyQuery": "keypair",
+    "queryParameters": {
+     "parameters": [
+      {
+       "name": "latitude",
+       "value": "={{ $('Settings').first().json.lat }}"
+      },
+      {
+       "name": "longitude",
+       "value": "={{ $('Settings').first().json.lon }}"
+      },
+      {
+       "name": "timezone",
+       "value": "={{ $('Settings').first().json.timezone }}"
+      },
+      {
+       "name": "forecast_days",
+       "value": "2"
+      },
+      {
+       "name": "current",
+       "value": "temperature_2m,apparent_temperature,weather_code"
+      },
+      {
+       "name": "daily",
+       "value": "temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code"
+      }
+     ]
+    }
+   },
+   "id": "3976aead-cce0-b2b9-0f8b-28c688181733",
+   "name": "Open-Meteo",
+   "type": "n8n-nodes-base.httpRequest",
+   "typeVersion": 4.2,
+   "position": [
+    1780,
+    60
+   ],
+   "onError": "continueRegularOutput"
+  },
+  {
+   "parameters": {
+    "jsCode": "const j = $('Intent').first().json, w = $input.first().json, cfg = $('Settings').first().json;\nif (w.error || !w.daily) return [{ json: { ...j, say: \"I can't get the weather right now.\" } }];\nconst W = c => c === 0 ? 'clear' : c <= 2 ? 'partly cloudy' : c === 3 ? 'overcast' : c <= 48 ? 'foggy' : c <= 57 ? 'drizzly'\n  : c <= 67 ? 'rainy' : c <= 77 ? 'snowy' : c <= 82 ? 'showery' : c <= 86 ? 'snow showers' : 'stormy';\nconst r = Math.round, d = w.daily, i = j.slots.when === 'tomorrow' ? 1 : 0;\nconst rain = d.precipitation_probability_max[i];\nconst say = i === 0\n  ? `${cfg.place}: ${r(w.current.temperature_2m)} degrees and ${W(w.current.weather_code)}, high of ${r(d.temperature_2m_max[0])}.` + (rain >= 40 ? ` ${rain} percent chance of rain, take a jacket.` : '')\n  : `Tomorrow in ${cfg.place}: ${W(d.weather_code[1])}, ${r(d.temperature_2m_min[1])} to ${r(d.temperature_2m_max[1])} degrees, ${rain} percent chance of rain.`;\nreturn [{ json: { ...j, say } }];"
+   },
+   "id": "9f575e8f-1ea1-5d8b-5cb7-dff48a5e9f36",
+   "name": "Weather reply",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    2000,
+    60
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const j = $input.first().json, tz = $('Settings').first().json.timezone;\nconst now = new Date();\nconst say = j.slots.what === 'date'\n  ? 'It is ' + now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: tz }) + '.'\n  : 'It is ' + now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }) + '.';\nreturn [{ json: { ...j, say } }];"
+   },
+   "id": "a3e6f0ad-c3b1-c10e-65f4-314ac6627e01",
+   "name": "Clock reply",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1780,
+    220
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "// The laptop does the work: the extension reads `action` and opens, closes or locks.\nconst j = $input.first().json, s = j.slots || {};\nconst action = ['open', 'close', 'lock'].includes(s.action) ? s.action : 'open';\nconst target = String(s.target || '').replace(/^(the|my)\\s+/, '').trim();\nif (action !== 'lock' && !target)\n  return [{ json: { ...j, say: action === 'open' ? 'Open what?' : 'Close what?', pending: { intent: 'desktop', action, ask: 'target' } } }];\nconst say = action === 'lock' ? 'Locking.' : (action === 'open' ? 'Opening ' : 'Closing ') + target + '.';\nreturn [{ json: { ...j, say, action: action === 'lock' ? { type: 'lock' } : { type: action, target } } }];"
+   },
+   "id": "45dd2402-1a4d-c363-fd4f-a2b2e28cbe0e",
+   "name": "Desktop action",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1780,
+    380
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const j = $input.first().json;\nconst say = String((j.slots || {}).answer || '').replace(/\\*+/g, '').replace(/\\s+/g, ' ').trim() || \"I'm not sure.\";\nreturn [{ json: { ...j, say } }];"
+   },
+   "id": "3e23affe-9599-b175-0c78-8fe7559c0106",
+   "name": "Chat reply",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1780,
+    540
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const j = $input.first().json, s = j.slots || {};\nconst say = s.cancel ? 'Okay.' : s.empty ? '' : 'Ask me anything, or say the weather, the time, open or close an app, or lock the screen.';\nreturn [{ json: { ...j, say } }];"
+   },
+   "id": "6692c550-8d93-c52b-014c-81d382e64033",
+   "name": "Help reply",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    1780,
+    700
+   ]
+  },
+  {
+   "parameters": {
+    "respondWith": "json",
+    "responseBody": "={{ JSON.stringify({ say: $json.say || '', pending: $json.pending || null, action: $json.action || null, intent: $json.intent, rule: $json.rule }) }}",
+    "options": {}
+   },
+   "id": "f876de25-785b-7f24-063d-844361df6c86",
+   "name": "Reply",
+   "type": "n8n-nodes-base.respondToWebhook",
+   "typeVersion": 1.1,
+   "position": [
+    2240,
+    380
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## 1. Understand\nRules catch the common asks for free. Anything else goes to a local model through Ollama, which picks the intent and, for small talk, writes the answer.",
+    "width": 1520,
+    "height": 520,
+    "color": 7
+   },
+   "id": "22cea4aa-8976-db41-532c-d6d8d44b23f1",
+   "name": "Note: understand",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    -40,
+    120
+   ]
+  },
+  {
+   "parameters": {
+    "content": "## 2. Act and reply\nThe laptop does desktop actions itself: the reply carries `action` and the GNOME extension opens, closes or locks.",
+    "width": 680,
+    "height": 1000,
+    "color": 7
+   },
+   "id": "03b4b656-d066-aa19-6f1c-64a437bdba51",
+   "name": "Note: act",
+   "type": "n8n-nodes-base.stickyNote",
+   "typeVersion": 1,
+   "position": [
+    1740,
+    -120
+   ]
+  }
+ ],
+ "connections": {
+  "Voice in": {
+   "main": [
+    [
+     {
+      "node": "Settings",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Settings": {
+   "main": [
+    [
+     {
+      "node": "Understand",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Understand": {
+   "main": [
+    [
+     {
+      "node": "Matched by a rule?",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Build router prompt": {
+   "main": [
+    [
+     {
+      "node": "LLM router (Ollama)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "LLM router (Ollama)": {
+   "main": [
+    [
+     {
+      "node": "Parse LLM reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Parse LLM reply": {
+   "main": [
+    [
+     {
+      "node": "Intent",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Open-Meteo": {
+   "main": [
+    [
+     {
+      "node": "Weather reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Matched by a rule?": {
+   "main": [
+    [
+     {
+      "node": "Intent",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Build router prompt",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Intent": {
+   "main": [
+    [
+     {
+      "node": "Open-Meteo",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Clock reply",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Desktop action",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Chat reply",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Help reply",
+      "type": "main",
+      "index": 0
+     }
+    ],
+    [
+     {
+      "node": "Chat reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Weather reply": {
+   "main": [
+    [
+     {
+      "node": "Reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Clock reply": {
+   "main": [
+    [
+     {
+      "node": "Reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Desktop action": {
+   "main": [
+    [
+     {
+      "node": "Reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Chat reply": {
+   "main": [
+    [
+     {
+      "node": "Reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Help reply": {
+   "main": [
+    [
+     {
+      "node": "Reply",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "active": false,
+ "settings": {
+  "executionOrder": "v1"
+ },
+ "pinData": {}
+}
